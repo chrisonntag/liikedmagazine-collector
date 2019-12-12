@@ -7,7 +7,7 @@ from flask import Flask, Response, render_template, make_response, url_for, redi
 from flask import jsonify
 from flask import request
 
-from model import media
+from model.model import User, MediaObject, DATABASE
 from peewee import DoesNotExist
 from peewee import fn as dbfn
 
@@ -55,19 +55,19 @@ def get_error(msg):
 # Open database connection before requests and close them afterwards
 @app.before_request
 def before_request():
-    media.DATABASE.connect()
+    DATABASE.connect()
 
 
 @app.after_request
 def after_request(response):
-    media.DATABASE.close()
+    DATABASE.close()
     return response
 
 
 @app.route('/')
 def root():
     try:
-        image = media.Image.select().where(media.Image.quality.is_null()).order_by(dbfn.Random()).get()
+        image = MediaObject.select().where(MediaObject.quality.is_null()).order_by(dbfn.Random()).get()
     except DoesNotExist:
         print("No data available")
         return render_template("/empty.html")
@@ -91,24 +91,25 @@ def get_resource(path):
     return Response(content, mimetype=mimetype)
 
 
-@app.route('/images/<id>', methods=['GET'])
-def rate(id=None):
+@app.route('/users/<user_id>/<media_id>', methods=['GET'])
+def rate(user_id=None, media_id=None):
     response_var = request.args.get('quality', '0')  # when in doubt choose 0 for quality
-    print("Response %s for image with id %s" % (response_var, id))
+    print("Response %s for image with id %s" % (response_var, media_id))
 
     try:
-        id = int(id)
+        media_id = int(media_id)
+        user_id = int(user_id)
         response_var = int(response_var)
     except ValueError:
         print("Could not convert id or response to integer")
         return redirect(url_for('root'))
 
     try:
-        image = media.Image.get_by_id(id)
+        image = MediaObject.get(user=user_id, media_id=media_id)
         image.quality = response_var
         image.save()
     except DoesNotExist:
-        print("Image with that id could not be found.")
+        print("MediaObject with that id could not be found.")
         return redirect(url_for('root'))
 
     return redirect(url_for('root'))
