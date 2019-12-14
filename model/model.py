@@ -32,9 +32,7 @@ class MediaObject(Model):
     quality = BooleanField(null=True, default=None)  # 1 or 0 for high or low quality
     caption = TextField(null=True)
     mentions = IntegerField(null=True)  # number of mentions in the caption
-    hashtags = IntegerField(null=True)  # number of hashtags
     media_type = CharField(null=True)  # either image, video, carousel, ...
-    view_ratio = FloatField(null=True)  # views on a video / followers
     like_ratio = FloatField(null=True)  # likes / followers
     comment_ratio = FloatField(null=True)  # comments / followers
 
