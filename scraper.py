@@ -164,13 +164,10 @@ def do_scraping():
 
 
 if __name__ == '__main__':
-    DATABASE.connect()
-
-    for i in range(0, 3):
+    for i in range(0, 6):
         if should_do_action(0.2):
             mimic_activity()
 
         do_scraping()
         sleep(uniform(50, 150))
 
-    DATABASE.close()
