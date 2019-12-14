@@ -1,0 +1,16 @@
+certifi==2019.11.28
+chardet==3.0.4
+Click==7.0
+Flask==1.1.1
+idna==2.8
+igramscraper==0.3.2
+itsdangerous==1.1.0
+Jinja2==2.10.3
+MarkupSafe==1.1.1
+peewee==3.13.1
+python-slugify==3.0.2
+requests==2.21.0
+simplejson==3.17.0
+text-unidecode==1.2
+urllib3==1.24.3
+Werkzeug==0.16.0
