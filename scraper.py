@@ -133,7 +133,7 @@ def do_scraping():
                     )
             except IntegrityError:
                 log.warning("%s has already been registered as a user; "
-                            "double repost from parent %s" % (u['user']['username'], user.username))
+                            "double repost from parent %s" % (tagged_username, user.username))
 
         # Save this media
         if user.follower < 1:
