@@ -113,12 +113,15 @@ def do_scraping():
                 sleep(small_wait_time)
                 try:
                     mentioned_user = instagram.get_account(u)
-                    tagged[u] = mentioned_user.identifier
+
+                    # Don't add users with no posts
+                    if mentioned_user.media_count > 0:
+                        tagged[u] = mentioned_user
                 except InstagramNotFoundException:
                     log.warning("Could not get user %s tagged in an image from %s" % (u, user.username))
 
         # Create new users with the current parent
-        for tagged_username, tagged_user_id in tagged.items():
+        for tagged_username, tagged_user_account in tagged.items():
             if tagged_username == user.username:
                 # Go to next if a user tagged himself
                 continue
@@ -127,9 +130,12 @@ def do_scraping():
             try:
                 with DATABASE.atomic():
                     tagged_user = User.create(
-                        user_id=tagged_user_id,
+                        user_id=tagged_user_account.identifier,
                         username=tagged_username,
-                        parent=user.user_id
+                        parent=user.user_id,
+                        follower=tagged_user_account.followed_by_count,
+                        following=tagged_user_account.follows_count,
+                        posts=tagged_user_account.media_count
                     )
             except IntegrityError:
                 log.warning("%s has already been registered as a user; "
