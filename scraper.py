@@ -106,6 +106,18 @@ def do_scraping():
         tagged = {item['user']['username']: item['user']['id'] for item in tagged}
         mentioned = re.findall(r'(?<![@\w])@(\w{1,25})', m.caption)
 
+        # Load user accounts for tagged users
+        for u in tagged.keys():
+            sleep(small_wait_time)
+            try:
+                mentioned_user = instagram.get_account(u)
+
+                # Don't add users with no posts
+                if mentioned_user.media_count > 0:
+                    tagged[u] = mentioned_user
+            except InstagramNotFoundException:
+                log.warning("Could not get user %s tagged in an image from %s" % (u, user.username))
+
         # Merge mentioned and tagged users
         for u in mentioned:
             log.info("Load data for tagged user %s" % u)
