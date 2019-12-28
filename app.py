@@ -7,6 +7,8 @@ from flask import Flask, Response, render_template, make_response, url_for, redi
 from flask import jsonify
 from flask import request
 
+from settings import settings
+
 from model.model import User, MediaObject, DATABASE
 from peewee import DoesNotExist
 from peewee import fn as dbfn
@@ -67,12 +69,20 @@ def after_request(response):
 @app.route('/')
 def root():
     try:
-        image = MediaObject.select().where(MediaObject.quality.is_null()).order_by(dbfn.Random()).get()
+        image = MediaObject.select()\
+            .where(MediaObject.quality.is_null(), MediaObject.downloaded == True)\
+            .order_by(dbfn.Random())\
+            .get()
     except DoesNotExist:
         print("No data available")
         return render_template("/empty.html")
 
-    return render_template("/index.html", data=image)
+    data = {
+        "image": image,
+        "url": "%s%s.%s.jpg" % (settings.data_path, image.user.user_id, image.media_id)
+    }
+
+    return render_template("/index.html", data=data)
 
 
 # Serving static files

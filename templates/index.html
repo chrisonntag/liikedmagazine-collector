@@ -23,13 +23,15 @@
         <div class="row">
             <div class="col-sm-1 col-md-3"></div>
             <div class="col-sm-10 col-md-6 bs-overview">
-                <p>{{ data.user.username }}</p>
-                <a id="media_link" href="https://instagram.com/p/{{ data.short_code }}" target="_blank">https://instagram.com/p/{{ data.short_code }}</a>
-                <p>{{ data.caption }}</p>
+                <p>{{ data.image.user.username }}</p>
+                <a id="media_link" href="https://instagram.com/p/{{ data.image.short_code }}" target="_blank">
+                    <img src="{{ data.url }}" />
+                </a>
+                <p>{{ data.image.caption }}</p>
 
                 <p style="text-align: center;">
-                    <a href="/users/{{ data.user.user_id }}/{{ data.media_id }}?quality=1" class="btn btn-success">HIGH</a>
-                    <a href="/users/{{ data.user.user_id }}/{{ data.media_id }}?quality=0" class="btn btn-danger">LOW</a>
+                    <a href="/users/{{ data.image.user.user_id }}/{{ data.image.media_id }}?quality=1" class="btn btn-success">HIGH</a>
+                    <a href="/users/{{ data.image.user.user_id }}/{{ data.image.media_id }}?quality=0" class="btn btn-danger">LOW</a>
                 </p>
             </div>
             <div class="col-sm-1 col-md-3"></div>

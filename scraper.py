@@ -1,7 +1,9 @@
+import os
 import re
 import sys
 from time import sleep
 import logging
+import urllib.request
 from igramscraper.instagram import Instagram
 from igramscraper.exception import *
 from peewee import IntegrityError
@@ -36,6 +38,20 @@ count = [1, 2, 3]
 small_wait_time = uniform(0.6, 2)
 middle_wait_time = uniform(2, 3)
 long_wait_time = uniform(3, 5)
+
+
+def download_photo(img_url, filename):
+    # Create file
+    filepath = "%s%s.jpg" % (settings.data_path, filename)
+    f = open(filepath, 'wb')
+    f.close()
+    if img_url[:5] == "https":
+        img_url = "http" + img_url[5:]
+    try:
+        urllib.request.urlretrieve(img_url, filepath)
+    except urllib.request.ContentTooShortError:
+        return False
+    return True
 
 
 def mimic_activity():
@@ -158,6 +174,11 @@ def do_scraping():
             follower = 1
         else:
             follower = user.follower
+
+        # Download this media
+        f_name = str(user.user_id) + "." + str(m.identifier)
+        download_successful = download_photo(m.image_high_resolution_url, f_name)
+
         try:
             with DATABASE.atomic():
                 image = MediaObject.create(
@@ -166,6 +187,7 @@ def do_scraping():
                     media_high_res_url=m.image_high_resolution_url,
                     short_code=m.short_code,
                     posted=m.created_time,
+                    downloaded=download_successful,
                     caption=m.caption,
                     mentions=len(tagged),
                     media_type=m.type,
