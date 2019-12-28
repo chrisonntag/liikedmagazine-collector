@@ -16,6 +16,7 @@ class User(Model):
     progress = FloatField(default=0.0)
     parent = IntegerField(null=True, default=None)
     max_id = TextField(default="")
+    quality = FloatField(default=0.0)
 
     class Meta:
         database = DATABASE
@@ -28,6 +29,7 @@ class MediaObject(Model):
     short_code = CharField()
     posted = DateTimeField()
     created = DateTimeField(default=datetime.datetime.now)
+    downloaded = BooleanField(default=False)
 
     quality = BooleanField(null=True, default=None)  # 1 or 0 for high or low quality
     caption = TextField(null=True)
