@@ -137,7 +137,7 @@ def do_scraping():
         # Merge mentioned and tagged users
         for u in mentioned:
             log.info("Load data for tagged user %s" % u)
-            if u not in tagged.keys():
+            if u not in tagged.keys() and u is not None:
                 sleep(small_wait_time)
                 try:
                     mentioned_user = instagram.get_account(u)
