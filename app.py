@@ -1,11 +1,11 @@
 import os
 from functools import wraps
-import simplejson as json
 import traceback
 
 from flask import Flask, Response, render_template, send_from_directory, url_for, redirect
 from flask import jsonify
 from flask import request
+from flask_basicauth import BasicAuth
 
 from settings import settings
 
@@ -19,6 +19,10 @@ IMAGE_FOLDER = 'data'
 
 app = Flask(__name__, static_url_path=STATIC_DIR, template_folder=TEMPLATE_DIR)
 app.debug = True
+app.config['BASIC_AUTH_USERNAME'] = settings.auth_username
+app.config['BASIC_AUTH_PASSWORD'] = settings.auth_password
+app.config['BASIC_AUTH_FORCE'] = True
+basic_auth = BasicAuth(app)
 
 
 def print_exceptions(fn):
