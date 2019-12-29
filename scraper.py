@@ -1,9 +1,8 @@
-import os
 import re
 import sys
 from time import sleep
 import logging
-import urllib.request
+from helper.action import download_photo
 from igramscraper.instagram import Instagram
 from igramscraper.exception import *
 from peewee import IntegrityError
@@ -38,20 +37,6 @@ count = [1, 2, 3]
 small_wait_time = uniform(0.6, 2)
 middle_wait_time = uniform(2, 3)
 long_wait_time = uniform(3, 5)
-
-
-def download_photo(img_url, filename):
-    # Create file
-    filepath = "%s%s.jpg" % (settings.data_path, filename)
-    f = open(filepath, 'wb')
-    f.close()
-    if img_url[:5] == "https":
-        img_url = "http" + img_url[5:]
-    try:
-        urllib.request.urlretrieve(img_url, filepath)
-    except urllib.request.ContentTooShortError:
-        return False
-    return True
 
 
 def mimic_activity():
