@@ -59,18 +59,6 @@ def get_error(msg):
     return jsonify({'result': 'ERROR', 'message': msg})
 
 
-# Open database connection before requests and close them afterwards
-@app.before_request
-def before_request():
-    DATABASE.connect()
-
-
-@app.after_request
-def after_request(response):
-    DATABASE.close()
-    return response
-
-
 @app.route('/')
 def root():
     try:

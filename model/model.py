@@ -49,4 +49,6 @@ def fill():
             User.create(user_id=user_id, username=username)
 
 
-DATABASE.create_tables([MediaObject, User])
+def create_tables():
+    with DATABASE:
+        DATABASE.create_tables([MediaObject, User])
