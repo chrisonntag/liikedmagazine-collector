@@ -3,7 +3,7 @@ from functools import wraps
 import simplejson as json
 import traceback
 
-from flask import Flask, Response, render_template, make_response, url_for, redirect
+from flask import Flask, Response, render_template, send_from_directory, url_for, redirect
 from flask import jsonify
 from flask import request
 
@@ -15,6 +15,7 @@ from peewee import fn as dbfn
 
 STATIC_DIR = '/static'
 TEMPLATE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
+IMAGE_FOLDER = 'data'
 
 app = Flask(__name__, static_url_path=STATIC_DIR, template_folder=TEMPLATE_DIR)
 app.debug = True
@@ -79,7 +80,7 @@ def root():
 
     data = {
         "image": image,
-        "url": "%s%s.%s.jpg" % (settings.data_path, image.user.user_id, image.media_id)
+        "url": "media/%s.%s.jpg" % (image.user.user_id, image.media_id)
     }
 
     return render_template("/index.html", data=data)
@@ -99,6 +100,11 @@ def get_resource(path):
     mimetype = mimetypes.get(ext, "text/html")
     content = get_file(complete_path)
     return Response(content, mimetype=mimetype)
+
+
+@app.route('/media/<path:filename>')
+def send_file(filename):
+    return send_from_directory(settings.data_path, filename)
 
 
 @app.route('/users/<user_id>/<media_id>', methods=['GET'])

@@ -50,8 +50,7 @@
   content: "Übersicht";
 }
 
-.heatmap_image {
-    width: 100%;
+#media_link > img {
+  width: 100%;
 }
-
 
