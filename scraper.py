@@ -74,7 +74,7 @@ def do_scraping():
     """
     sleep(middle_wait_time)
 
-    user = User.select().where(User.progress < 0.95).order_by(User.progress.desc()).get()
+    user = User.select().where(User.progress < 0.95).order_by(User.quality.desc(), User.progress.desc()).get()
     media = instagram.get_medias_by_user_id(str(user.user_id), settings.media_per_request, user.max_id)
     account = instagram.get_account_by_id(str(user.user_id))
 
