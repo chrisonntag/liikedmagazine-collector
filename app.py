@@ -110,7 +110,7 @@ def rate(user_id=None, media_id=None):
         response_var = int(response_var)
     except ValueError:
         print("Could not convert id or response to integer")
-        return redirect(url_for('root'))
+        return redirect(settings.base_url)
 
     try:
         image = MediaObject.get(user=user_id, media_id=media_id)
@@ -118,9 +118,9 @@ def rate(user_id=None, media_id=None):
         image.save()
     except DoesNotExist:
         print("MediaObject with that id could not be found.")
-        return redirect(url_for('root'))
+        return redirect(settings.base_url)
 
-    return redirect(url_for('root'))
+    return redirect(settings.base_url)
 
 
 if __name__ == '__main__':
