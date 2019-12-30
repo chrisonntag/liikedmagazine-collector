@@ -50,9 +50,7 @@ def mimic_activity():
         top_media = instagram.get_current_top_medias_by_tag_name(tag)
 
         for tm in top_media:
-            if should_do_action(0.2):
-                instagram.like(tm.identifier)
-                print("%s liked https://www.instagram.com/p/%s" % (scraping_user.get('username'), tm.short_code))
+            if should_do_action(0.05):
                 sleep(long_wait_time)
 
                 # Follow this user
@@ -182,10 +180,6 @@ def do_scraping():
         except IntegrityError:
             log.warning("https://instagram.com/p/%s by %s has already been saved" % (m.short_code, user.username))
             continue
-
-        # Like this media
-        if should_do_action(0.08):
-            instagram.like(m.identifier)
 
 
 if __name__ == '__main__':
