@@ -6,6 +6,7 @@ from helper.action import download_photo
 from igramscraper.instagram import Instagram
 from igramscraper.exception import *
 from peewee import IntegrityError
+from peewee import fn as dbfn
 from model.model import User, MediaObject, DATABASE
 from settings import settings
 from random import choice, uniform
@@ -74,7 +75,10 @@ def do_scraping():
     """
     sleep(middle_wait_time)
 
-    user = User.select().where(User.progress < 0.95).order_by(User.quality.desc(), User.progress.desc()).get()
+    quality_root = User.select().where(User.quality > 0.5)
+    quality_user = User.select().where((User.parent.in_(quality_root)) | (User.quality > 0.5), User.progress < 0.95)
+
+    user = quality_user.order_by(dbfn.Random()).get()
     media = instagram.get_medias_by_user_id(str(user.user_id), settings.media_per_request, user.max_id)
     account = instagram.get_account_by_id(str(user.user_id))
 
