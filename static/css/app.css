@@ -6,7 +6,7 @@ body {
 }
 
 .main-container {
-    margin: 60px;
+    margin: 20px 60px 60px 60px;
 }
 
 .bs-register {
@@ -58,5 +58,17 @@ body {
 #media_link > img {
   width: 100%;
   padding-bottom: 12px;
+}
+
+.tinder {
+  width: 45%;
+}
+
+.left {
+  float: left;
+}
+
+.right {
+  float: right;
 }
 
