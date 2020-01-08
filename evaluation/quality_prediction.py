@@ -1,14 +1,17 @@
-import sqlite3
 import pandas as pd
 import numpy as np
 import re
+import os
+import pickle
 import joblib
+import sqlite3
+from settings import settings
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
 
 
-DB = sqlite3.connect('../labeled_media.db')
+CWD = os.path.dirname(os.path.abspath(__file__))
 
 
 # Average word length
@@ -24,34 +27,17 @@ def avgword(sentence):
 class QualityPrediction:
 
     BASE_MODEL = GaussianProcessClassifier(1.0 * RBF(1.0))
-    MODEL_FILE = 'quality_model.pkl'
-    MODEL = None
+    MODEL_FILE_NAME = 'quality_classifier.pkl'
 
     def __init__(self):
-        model = self.load()
-        if model is not None:
-            self.MODEL = model
-        else:
-            self.MODEL = self.create()
+        try:
+            with open(os.path.join(CWD, QualityPrediction.MODEL_FILE_NAME), 'rb') as f:
+                self.model = joblib.load(f)
+        except FileNotFoundError:
+            self.create()
 
     @staticmethod
-    def train(clf):
-        query = "SELECT mediaobject.caption, mediaobject.comment_ratio, mediaobject.like_ratio, mediaobject.mentions, " \
-                "mediaobject.quality, user.follower, user.following, user.posts " \
-                "FROM mediaobject " \
-                "INNER JOIN user ON mediaobject.user_id=user.user_id " \
-                "WHERE mediaobject.quality IS NOT NULL"
-        data = pd.read_sql_query(query, DB)
-        data = data.dropna()
-
-        # The dataset seems unbalanced, therefore either down- or upsample the dataset.
-        count_low, count_high = data['quality'].value_counts()
-        low_quality = data[data['quality'] == 0]
-        high_quality = data[data['quality'] == 1]
-
-        low_quality_under = low_quality.sample(count_high)
-        data = pd.concat([low_quality_under, high_quality], axis=0)
-
+    def prepare_features(data, train=True):
         # Feature Selection
         # Add num of hashtags and caption length
         hashtags = []
@@ -93,33 +79,67 @@ class QualityPrediction:
         num_feature_cols = ['quality', 'mentions', 'like_ratio', 'comment_ratio', 'hashtags_num', 'wordcount', 'charcount', 'avgword', 'follower', 'following', 'posts']
 
         # Vectorizing Hashtags and Caption
-        vectorizer = TfidfVectorizer(stop_words='english')
+        if train:
+            c_vectorizer = TfidfVectorizer(stop_words='english')
+            h_vectorizer = TfidfVectorizer(stop_words='english')
 
-        vectorized_caption = vectorizer.fit_transform(data['clean_caption']).todense()
-        vectorized_hashtags = vectorizer.fit_transform(data['hashtags']).todense()
+            vectorized_caption = c_vectorizer.fit_transform(data['clean_caption'])
+            vectorized_hashtags = h_vectorizer.fit_transform(data['hashtags'])
+
+            # Dump vectorizers
+            pickle.dump(c_vectorizer, open(os.path.join(CWD, 'c_vectorizer.pkl'), 'wb'))
+            pickle.dump(h_vectorizer, open(os.path.join(CWD, 'h_vectorizer.pkl'), 'wb'))
+        else:
+            # Load TfidfVectorizers
+            with open(os.path.join(CWD, 'c_vectorizer.pkl'), 'rb') as f:
+                c_vectorizer = pickle.load(f)
+            with open(os.path.join(CWD, 'h_vectorizer.pkl'), 'rb') as f:
+                h_vectorizer = pickle.load(f)
+
+            vectorized_caption = c_vectorizer.transform(data['clean_caption'])
+            vectorized_hashtags = h_vectorizer.transform(data['hashtags'])
 
         # Training the model
         # Features without quality column
         num_features = data[num_feature_cols].iloc[:, 1:].values
-        X = np.hstack((vectorized_caption, vectorized_hashtags, num_features))
+        X = np.hstack((vectorized_caption.todense(), vectorized_hashtags.todense(), num_features))
+
+        return X
+
+    @staticmethod
+    def train(clf):
+        query = "SELECT mediaobject.caption, mediaobject.comment_ratio, mediaobject.like_ratio, mediaobject.mentions, " \
+                "mediaobject.quality, user.follower, user.following, user.posts " \
+                "FROM mediaobject " \
+                "INNER JOIN user ON mediaobject.user_id=user.user_id " \
+                "WHERE mediaobject.quality IS NOT NULL"
+        db = sqlite3.connect(settings.database)
+        data = pd.read_sql_query(query, db)
+        data = data.dropna()
+
+        # The data-set seems unbalanced, therefore down-sample the dataset to the minority class.
+        count_low, count_high = data['quality'].value_counts()
+        low_quality = data[data['quality'] == 0]
+        high_quality = data[data['quality'] == 1]
+
+        low_quality_under = low_quality.sample(count_high)
+        data = pd.concat([low_quality_under, high_quality], axis=0)
+
+        X = QualityPrediction.prepare_features(data)
         y = data.quality
 
         clf.fit(X, y)
 
         return clf
 
-    def create(self, filename=MODEL_FILE):
+    def create(self):
         clf = self.train(self.BASE_MODEL)
-        joblib.dump(clf, filename)
-        return clf
-
-    def load(self, filename=MODEL_FILE):
-        try:
-            clf = joblib.load(filename)
-            return clf
-        except Exception:
-            return None
+        pickle.dump(clf, open(os.path.join(CWD, QualityPrediction.MODEL_FILE_NAME), 'wb'))
+        self.model = clf
 
     def predict(self, X):
-        return self.MODEL.predict(X)
+        return self.model.predict(X)
+
+    def predict_proba(self, X):
+        return self.model.predict_proba(X)
 
