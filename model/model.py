@@ -43,6 +43,16 @@ class MediaObject(Model):
         primary_key = CompositeKey('user', 'media_id')
 
 
+class Post(Model):
+    user = ForeignKeyField(User, backref='re-posts')
+    media_id = IntegerField()
+    imagehash = TextField()
+    caption = TextField(null=True)
+
+    class Meta:
+        database = DATABASE
+
+
 def fill():
     with DATABASE.atomic():
         for user_id, username in settings.sources.items():
@@ -51,4 +61,4 @@ def fill():
 
 def create_tables():
     with DATABASE:
-        DATABASE.create_tables([MediaObject, User])
+        DATABASE.create_tables([MediaObject, User, Post])
