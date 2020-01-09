@@ -130,7 +130,7 @@ quality_images = sorted(quality_images, key=lambda el: el[0], reverse=True)
 posted = False
 for pred, obj in quality_images:
     filename = gen_filename(obj)
-    imagehash = '123ha672bc892'  # gen_hash(filename)
+    imagehash = gen_hash(filename)
     posted_obj = False
 
     if imagehash is not None and not has_been_posted(imagehash) and not posted:
