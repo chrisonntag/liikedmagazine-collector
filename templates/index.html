@@ -30,8 +30,8 @@
                 <p>{{ data.image.caption }}</p>
 
                 <p style="text-align: center;">
-                    <a href="/users/{{ data.image.user.user_id }}/{{ data.image.media_id }}?quality=1" class="btn btn-success tinder left">HIGH</a>
-                    <a href="/users/{{ data.image.user.user_id }}/{{ data.image.media_id }}?quality=0" class="btn btn-danger tinder right">LOW</a>
+                    <a href="/users/{{ data.image.user.user_id }}/{{ data.image.media_id }}?quality=1" id="high" class="btn btn-success tinder left">HIGH</a>
+                    <a href="/users/{{ data.image.user.user_id }}/{{ data.image.media_id }}?quality=0" id="low" class="btn btn-danger tinder right">LOW</a>
                 </p>
             </div>
             <div class="col-sm-1 col-md-3"></div>
@@ -40,6 +40,6 @@
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-    <!-- <script src="js/app.js"></script> -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   </body>
 </html>
