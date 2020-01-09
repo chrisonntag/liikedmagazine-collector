@@ -49,7 +49,7 @@ class QualityPrediction:
 
         for caption in data['caption']:
             # find hashtags
-            tags = re.findall(r'(?<=[\s>])#(\d*[A-Za-z_]+\d*)\b(?!;)', caption)
+            tags = re.findall(settings.hashtag_regex, caption)
 
             # delete mentions and hashtags
             cc = re.sub(r'(#\w+)', '', caption)
