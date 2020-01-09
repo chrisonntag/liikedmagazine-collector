@@ -107,7 +107,7 @@ def do_scraping():
         # Find users that were tagged in the image or mentioned in the caption
         tagged = instagram.get_media_tagged_users_by_code(m.short_code)
         tagged = {item['user']['username']: item['user']['id'] for item in tagged}
-        if len(m.caption) > 0:
+        if m.caption is not None and len(m.caption) > 0:
             mentioned = re.findall(r'(?<![@\w])@(\w{1,25})', m.caption)
         else:
             mentioned = []
