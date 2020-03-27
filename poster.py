@@ -1,8 +1,13 @@
 from igramscraper.instagram import Instagram
 from settings import settings
+import os
 import re
+import telepot
 from evaluation.quality_prediction import QualityPrediction
 from model.model import MediaObject, User, Post, DoesNotExist
+import helper.parser as helper
+import helper.action as action
+from peewee import fn as dbfn
 from random import choice, sample
 from PIL import Image
 import imagehash
@@ -21,6 +26,8 @@ import pandas as pd
 8. Post!
 """
 
+tg = telepot.Bot(settings.telegram_api_key)
+
 
 def has_been_posted(imgh):
     """
@@ -32,13 +39,13 @@ def has_been_posted(imgh):
     return len(posts) > 0
 
 
-def post(fn, o):
+def post(fp, url, o):
     caption = gen_caption(o)
-    print("Filename:", fn)
+    print("Filename:", fp)
+    print("URL:", url)
     print("Caption:", "\n" + caption)
 
-    with client(settings.bot_account['username'], settings.bot_account['password']) as cli:
-        cli.upload(fn, caption=caption)
+    tg.sendPhoto(settings.telegram_chat_id, open(fp, 'rb'), caption)
 
     Post.create(
         user=obj['user_id'],
@@ -48,19 +55,17 @@ def post(fn, o):
     )
 
 
-def gen_filename(o):
-    return "%s%s.%s.jpg" % (settings.data_path, o['user_id'], o['media_id'])
-
-
-def gen_hashtags(num: int=12):
-    if len(settings.tags) < num:
-        num = len(settings.tags)
-    return " ".join(sample(settings.tags, k=num))
+def gen_hashtags(num: int=18):
+    if len(settings.caption_tags) < num:
+        num = len(settings.caption_tags)
+    return settings.own_tag + " " + " ".join(sample(settings.caption_tags, k=num))
 
 
 def gen_caption(o):
     caption = choice(settings.caption_templates) % o['username']
-    placeholder = "\n.\n.\n.\n"
+    if helper.should_do_action(0.2):
+        caption += "\nTag #liikedmagazine to get featured."
+    placeholder = "\n.\n.\n.\n.\n"
     tags = gen_hashtags()
 
     return caption + placeholder + tags
@@ -78,6 +83,7 @@ featured_users = [user.user_id for user in Post.select()]
 query = MediaObject.select(
     MediaObject.media_id,
     MediaObject.short_code,
+    MediaObject.media_high_res_url,
     MediaObject.caption,
     MediaObject.comment_ratio,
     MediaObject.like_ratio,
@@ -92,11 +98,13 @@ query = MediaObject.select(
     MediaObject.quality.is_null(True),
     MediaObject.mentions < 2,
     MediaObject.user_id.not_in(featured_users)
-)
+).order_by(dbfn.Random()).limit(10)
 objs = query.dicts()
 
 qp = QualityPrediction()
 quality_images = []
+
+print("Prepare features and predict quality...")
 
 if len(objs) > 0:
     for obj in objs:
@@ -108,6 +116,7 @@ if len(objs) > 0:
         if obj['username'] in re.findall(settings.hashtag_regex, obj['caption']):
             # This is probably a post from a feature site, if the a user took his own username as a hashtag
             print("This is probably from a feature site: %s" % obj['short_code'])
+            continue
 
         data = pd.DataFrame([obj])
 
@@ -116,7 +125,6 @@ if len(objs) > 0:
             pred_proba = qp.predict_proba(X=X).item(1)  # Returns the probability for quality == 1
 
             if pred_proba >= 0.72:
-                print("https://instagram.com/p/%s %.3f" % (obj['short_code'], pred_proba))
                 quality_images.append(
                     (pred_proba, obj)
                 )
@@ -125,19 +133,35 @@ if len(objs) > 0:
 else:
     print("No data available.")
 
+
+print("Sort possible posts...")
+
 # Sort the selected images in descending order (highest rating first).
 quality_images = sorted(quality_images, key=lambda el: el[0], reverse=True)
 posted = False
 for pred, obj in quality_images:
-    filename = gen_filename(obj)
-    imagehash = gen_hash(filename)
+    url = "https://instagram.com/p/%s" % obj['short_code']
+    filename = "%s.%s" % (obj['user_id'], obj['media_id'])
+    filepath = settings.data_path + filename + ".jpg"
+    absolute_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), filepath)
+
+    print("\t%s %.3f" % (url, pred))
+
+    if not os.path.exists(absolute_filepath):
+        # Download photo
+        print("Download photo...")
+        action.download_photo(obj['media_high_res_url'], filename)
+
+    imagehash = gen_hash(filepath)
     posted_obj = False
 
     if imagehash is not None and not has_been_posted(imagehash) and not posted:
         # Post if image has not been posted before and set var that post image has been found.
-        post(filename, obj)
-        posted = True
-        posted_obj = True
+        post(absolute_filepath, url, obj)
+        posted = True  # Post image has been found
+        posted_obj = True  # This is the post object
+    else:
+        print("The image hash is None or has been posted before.")
 
     # Update quality for all images except it's predicted quality is bigger than some threshold.
     if posted_obj or pred < 0.80:
@@ -147,5 +171,4 @@ for pred, obj in quality_images:
             media_obj.save()
         except DoesNotExist:
             print("The image does not exist in the database.")
-
 

@@ -53,6 +53,13 @@ class Post(Model):
         database = DATABASE
 
 
+class Follower(Model):
+    user_id = IntegerField(unique=True, primary_key=True)
+    username = CharField()
+    gender = BooleanField(default=0)  # 1 = female, 0 = male
+    followed_back = BooleanField(null=True)
+
+
 def fill():
     with DATABASE.atomic():
         for user_id, username in settings.sources.items():
