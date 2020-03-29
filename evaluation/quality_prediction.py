@@ -8,6 +8,7 @@ import sqlite3
 from settings import settings
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.gaussian_process.kernels import RBF
 
 
@@ -26,8 +27,8 @@ def avgword(sentence):
 
 class QualityPrediction:
 
-    BASE_MODEL = GaussianProcessClassifier(1.0 * RBF(1.0))
-    MODEL_FILE_NAME = 'quality_classifier.pkl'
+    BASE_MODEL = AdaBoostClassifier()  # GaussianProcessClassifier(1.0 * RBF(1.0))
+    MODEL_FILE_NAME = 'quality_classifier_dt.pkl'
 
     def __init__(self):
         try:

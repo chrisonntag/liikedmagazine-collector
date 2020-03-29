@@ -98,7 +98,7 @@ query = MediaObject.select(
     MediaObject.quality.is_null(True),
     MediaObject.mentions < 2,
     MediaObject.user_id.not_in(featured_users)
-).order_by(dbfn.Random()).limit(10)
+).order_by(dbfn.Random()).limit(30)
 objs = query.dicts()
 
 qp = QualityPrediction()
@@ -111,11 +111,17 @@ if len(objs) > 0:
         if re.search(settings.ad_regex, obj['caption']):
             # This is probably an ad, check the next image.
             print("This is probably an ad: %s" % obj['short_code'])
+            media_obj = MediaObject.get(user_id=obj['user_id'], media_id=obj['media_id'])
+            media_obj.quality = 0
+            media_obj.save()
             continue
 
         if obj['username'] in re.findall(settings.hashtag_regex, obj['caption']):
             # This is probably a post from a feature site, if the a user took his own username as a hashtag
             print("This is probably from a feature site: %s" % obj['short_code'])
+            media_obj = MediaObject.get(user_id=obj['user_id'], media_id=obj['media_id'])
+            media_obj.quality = 0
+            media_obj.save()
             continue
 
         data = pd.DataFrame([obj])
@@ -124,7 +130,10 @@ if len(objs) > 0:
             X = QualityPrediction.prepare_features(data, train=False)
             pred_proba = qp.predict_proba(X=X).item(1)  # Returns the probability for quality == 1
 
-            if pred_proba >= 0.72:
+            url = "https://instagram.com/p/%s" % obj['short_code']
+            print("%s %.3f" % (url, pred_proba))
+
+            if pred_proba >= 0.64:
                 quality_images.append(
                     (pred_proba, obj)
                 )
@@ -132,12 +141,17 @@ if len(objs) > 0:
             print("Could not load TFIDF Vocabulary files.")
 else:
     print("No data available.")
+    tg.sendMessage(settings.telegram_chat_id, "No data available.")
 
 
 print("Sort possible posts...")
 
+if len(quality_images) == 0:
+    tg.sendMessage(settings.telegram_chat_id, "No posts with quality > 0.72 in the database.")
+
 # Sort the selected images in descending order (highest rating first).
 quality_images = sorted(quality_images, key=lambda el: el[0], reverse=True)
+
 posted = False
 for pred, obj in quality_images:
     url = "https://instagram.com/p/%s" % obj['short_code']
@@ -164,11 +178,10 @@ for pred, obj in quality_images:
         print("The image hash is None or has been posted before.")
 
     # Update quality for all images except it's predicted quality is bigger than some threshold.
-    if posted_obj or pred < 0.80:
+    if posted_obj or pred < 0.6:
         try:
             media_obj = MediaObject.get(user_id=obj['user_id'], media_id=obj['media_id'])
             media_obj.quality = pred
             media_obj.save()
         except DoesNotExist:
             print("The image does not exist in the database.")
-
