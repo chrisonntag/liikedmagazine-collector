@@ -133,7 +133,7 @@ if len(objs) > 0:
             url = "https://instagram.com/p/%s" % obj['short_code']
             print("%s %.3f" % (url, pred_proba))
 
-            if pred_proba >= 0.64:
+            if pred_proba >= 0.72:
                 quality_images.append(
                     (pred_proba, obj)
                 )
@@ -178,7 +178,7 @@ for pred, obj in quality_images:
         print("The image hash is None or has been posted before.")
 
     # Update quality for all images except it's predicted quality is bigger than some threshold.
-    if posted_obj or pred < 0.6:
+    if posted_obj or pred < 0.8:
         try:
             media_obj = MediaObject.get(user_id=obj['user_id'], media_id=obj['media_id'])
             media_obj.quality = pred

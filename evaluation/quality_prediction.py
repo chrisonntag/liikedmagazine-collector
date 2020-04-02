@@ -27,8 +27,8 @@ def avgword(sentence):
 
 class QualityPrediction:
 
-    BASE_MODEL = AdaBoostClassifier()  # GaussianProcessClassifier(1.0 * RBF(1.0))
-    MODEL_FILE_NAME = 'quality_classifier_dt.pkl'
+    BASE_MODEL = GaussianProcessClassifier(1.0 * RBF(1.0))
+    MODEL_FILE_NAME = 'quality_classifier.pkl'
 
     def __init__(self):
         try:
