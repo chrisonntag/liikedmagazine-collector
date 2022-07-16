@@ -2,6 +2,7 @@ settings.py
 *.db
 *.pkl
 data/
+evaluation/.ipynb_checkpoints/
 
 # Created by https://www.gitignore.io/api/venv,flask,python,pycharm,virtualenv
 # Edit at https://www.gitignore.io/?templates=venv,flask,python,pycharm,virtualenv
